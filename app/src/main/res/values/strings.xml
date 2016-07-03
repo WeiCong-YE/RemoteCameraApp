@@ -1,4 +1,22 @@
 <resources>
     <string name="app_name">RemoteCameraApp</string>
     <string name="action_settings">Settings</string>
+    <string name="enable_bluetooth">Enable bluetooth</string>
+    <string name="string_bluetooth_off">Bluetooth off</string>
+    <string name="string_bluetooth_turning_off">Turning Bluetooth off&#8230;</string>
+    <string name="string_bluetooth_on">Bluetooth on</string>
+    <string name="string_bluetooth_turning_on">Turning Bluetooth on&#8230;</string>
+    <string name="string_bluetooth_connected">Bluetooth connected</string>
+    <string name="string_bluetooth_connecting">Bluetooth connecting&#8230;</string>
+    <string name="string_bluetooth_disconnected">Bluetooth disconnected</string>
+    <string name="string_bluetooth_disconnecting">Bluetooth disconnecting&#8230;</string>
+    <string name="string_bluetooth_state_error">Unable to read bluetooth state</string>
+    <string name="string_enable_bluetooth">Enable Bluetooth</string>
+    <string name="string_disable_bluetooth">Disable Bluetooth</string>
+    <string name="string_bluetooth_unsupported">bluetooth not supported</string>
+    <string name="string_bluetooth_supported">bluetooth supported</string>
+    <string name="title_bluetooth_handler_activity">Bluetooth Controls</string>
+    <string name="string_set_discoverable">Set Discoverable</string>
+    <string name="string_set_undiscoverable">Set Undiscoverable</string>
+    <string name="show_paired_devices">Paired Devices</string>
 </resources>
