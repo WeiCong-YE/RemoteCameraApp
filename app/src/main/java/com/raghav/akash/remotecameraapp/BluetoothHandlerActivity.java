@@ -1,65 +1,25 @@
 package com.raghav.akash.remotecameraapp;
 
 import android.bluetooth.BluetoothAdapter;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
+import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.raghav.akash.remotecameraapp.util.Constants;
+
 public class BluetoothHandlerActivity extends ToolbarBaseActivity {
 
-    private static final int REQUEST_ENABLE_BT = 101;
+    private BluetoothAdapter bluetoothAdapter;
     private TextView bluetoothStateText;
-    BroadcastReceiver bluetoothReciever = new BroadcastReceiver() {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            final String action = intent.getAction();
-
-            if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
-                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
-                        BluetoothAdapter.ERROR);
-                switch (state) {
-                    case BluetoothAdapter.STATE_OFF:
-                        setBluetoothState(1);
-
-                        break;
-                    case BluetoothAdapter.STATE_TURNING_OFF:
-                        setBluetoothState(2);
-                        break;
-                    case BluetoothAdapter.STATE_ON:
-                        setBluetoothState(3);
-                        break;
-                    case BluetoothAdapter.STATE_TURNING_ON:
-                        setBluetoothState(4);
-                        break;
-                    case BluetoothAdapter.STATE_CONNECTED:
-                        setBluetoothState(5);
-                        break;
-                    case BluetoothAdapter.STATE_CONNECTING:
-                        setBluetoothState(6);
-                        break;
-                    case BluetoothAdapter.STATE_DISCONNECTED:
-                        setBluetoothState(7);
-                        break;
-                    case BluetoothAdapter.STATE_DISCONNECTING:
-                        setBluetoothState(8);
-                        break;
-                    default:
-                        setBluetoothState(state);
-                        break;
-                }
-            }
-        }
-    };
     private Button tunOnOffBtn;
     private Button discoverableBtn;
+    private Button pairedDevicesBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,34 +28,64 @@ public class BluetoothHandlerActivity extends ToolbarBaseActivity {
         setupToolbar(getString(R.string.title_bluetooth_handler_activity));
         init();
         enableBluetooth();
-        registerReceiver(bluetoothReciever, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
+        setupListeners();
+        registerReceiver(bluetoothReceiver, new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED));
     }
 
     private void init() {
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         bluetoothStateText = (TextView) findViewById(R.id.bluetoothStateTxt);
         tunOnOffBtn = (Button) findViewById(R.id.turn_on_off_btn);
-        assert tunOnOffBtn != null;
-        tunOnOffBtn.setEnabled(false);
-        tunOnOffBtn.setText(R.string.string_enable_bluetooth);
         discoverableBtn = (Button) findViewById(R.id.discoverable_btn);
-        assert discoverableBtn != null;
-        discoverableBtn.setEnabled(false);
-        discoverableBtn.setText(R.string.string_set_discoverable);
-        discoverableBtn.setText(R.string.string_set_undiscoverable);
+        pairedDevicesBtn = (Button) findViewById(R.id.show_paired_devices_btn);
+    }
+
+    private void setupListeners() {
+        tunOnOffBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (bluetoothAdapter.isEnabled()) {
+                    setBluetoothDisabled();
+                } else {
+                    setBluetoothEnabled();
+                }
+            }
+        });
+
+        discoverableBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (bluetoothAdapter.isEnabled() && bluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+                    Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+                    discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+                    startActivityForResult(discoverableIntent, Constants.REQUEST_DISCOVERABLE_BT);
+                }
+            }
+        });
+
+        pairedDevicesBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(BluetoothHandlerActivity.this, PairedDevicesActivity.class));
+            }
+        });
+    }
+
+    private void setBluetoothDisabled() {
+        bluetoothAdapter.disable();
     }
 
     /**
      * detect and enable bluetooth
      */
     public void enableBluetooth() {
-        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (mBluetoothAdapter == null) { // check if bluetooth is supported
+        if (bluetoothAdapter == null) { // check if bluetooth is supported
             Snackbar.make(getParentView(), R.string.string_bluetooth_unsupported, Snackbar.LENGTH_LONG).show();
             bluetoothStateText.setText(R.string.string_bluetooth_unsupported);
         } else {
             Snackbar.make(getParentView(), R.string.string_bluetooth_supported, Snackbar.LENGTH_SHORT).show();
             tunOnOffBtn.setEnabled(true);
-            if (!mBluetoothAdapter.isEnabled()) { // check if bluetooth is enabled
+            if (!bluetoothAdapter.isEnabled()) { // check if bluetooth is enabled
                 tunOnOffBtn.setText(R.string.string_enable_bluetooth);
                 bluetoothStateText.setText(R.string.string_bluetooth_off);
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -103,7 +93,7 @@ public class BluetoothHandlerActivity extends ToolbarBaseActivity {
                 builder.setPositiveButton("yes", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        sendToBluetoothSettings();
+                        setBluetoothEnabled();
                         dialog.dismiss();
                     }
                 });
@@ -127,34 +117,44 @@ public class BluetoothHandlerActivity extends ToolbarBaseActivity {
     /**
      * open bluetooth settings to enable bluetooth
      */
-    public void sendToBluetoothSettings() {
+    public void setBluetoothEnabled() {
         Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-        startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        startActivityForResult(enableBtIntent, Constants.REQUEST_ENABLE_BT);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_ENABLE_BT) {
+        if (requestCode == Constants.REQUEST_ENABLE_BT) {
             if (resultCode == RESULT_OK) {
-                discoverableBtn.setEnabled(true);
                 Snackbar.make(getParentView(), "bluetooth enabled", Snackbar.LENGTH_SHORT).show();
             } else if (resultCode == RESULT_CANCELED) {
                 Snackbar.make(getParentView(), "bluetooth enabling failed", Snackbar.LENGTH_SHORT).show();
             }
         }
+        if (requestCode == Constants.REQUEST_DISCOVERABLE_BT) {
+            if (resultCode == RESULT_CANCELED) {
+                Snackbar.make(getParentView(), "bluetooth discovering permission denied", Snackbar.LENGTH_SHORT).show();
+            } else {
+                Snackbar.make(getParentView(), "bluetooth discoverable for " + resultCode + " seconds", Snackbar.LENGTH_SHORT).show();
+            }
+        }
     }
 
-    private void setBluetoothState(int state) {
+
+    @Override
+    protected void setBluetoothState(int state) {
         switch (state) {
             case 1:
                 bluetoothStateText.setText(R.string.string_bluetooth_off);
+                tunOnOffBtn.setText(R.string.string_enable_bluetooth);
                 break;
             case 2:
                 bluetoothStateText.setText(R.string.string_bluetooth_turning_off);
                 break;
             case 3:
                 bluetoothStateText.setText(R.string.string_bluetooth_on);
+                tunOnOffBtn.setText(R.string.string_disable_bluetooth);
                 break;
             case 4:
                 bluetoothStateText.setText(R.string.string_bluetooth_turning_on);
@@ -179,7 +179,7 @@ public class BluetoothHandlerActivity extends ToolbarBaseActivity {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(bluetoothReciever);
+        unregisterReceiver(bluetoothReceiver);
     }
 
 }

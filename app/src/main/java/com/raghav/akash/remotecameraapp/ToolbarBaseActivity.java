@@ -1,5 +1,9 @@
 package com.raghav.akash.remotecameraapp;
 
+import android.bluetooth.BluetoothAdapter;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
@@ -10,6 +14,51 @@ import android.view.ViewStub;
 public class ToolbarBaseActivity extends AppCompatActivity {
 
     View container;
+    BroadcastReceiver bluetoothReceiver = new BroadcastReceiver() {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+
+            if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
+                final int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
+                        BluetoothAdapter.ERROR);
+                switch (state) {
+                    case BluetoothAdapter.STATE_OFF:
+                        setBluetoothState(1);
+                        break;
+                    case BluetoothAdapter.STATE_TURNING_OFF:
+                        setBluetoothState(2);
+                        break;
+                    case BluetoothAdapter.STATE_ON:
+                        setBluetoothState(3);
+                        break;
+                    case BluetoothAdapter.STATE_TURNING_ON:
+                        setBluetoothState(4);
+                        break;
+                    case BluetoothAdapter.STATE_CONNECTED:
+                        setBluetoothState(5);
+                        break;
+                    case BluetoothAdapter.STATE_CONNECTING:
+                        setBluetoothState(6);
+                        break;
+                    case BluetoothAdapter.STATE_DISCONNECTED:
+                        setBluetoothState(7);
+                        break;
+                    case BluetoothAdapter.STATE_DISCONNECTING:
+                        setBluetoothState(8);
+                        break;
+                    default:
+                        setBluetoothState(state);
+                        break;
+                }
+            }
+        }
+    };
+
+    protected void setBluetoothState(int state) {
+        //override method to listen to bluetooth state
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
